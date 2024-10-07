@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="accountSettings">
+    <option name="activeProfile" value="profile:chunlin_default" />
+    <option name="activeRegion" value="ap-northeast-1" />
+    <option name="recentlyUsedProfiles">
+      <list>
+        <option value="profile:chunlin_default" />
+        <option value="profile:default" />
+      </list>
+    </option>
+    <option name="recentlyUsedRegions">
+      <list>
+        <option value="ap-northeast-1" />
+        <option value="ap-southeast-5" />
+        <option value="eu-west-1" />
+      </list>
+    </option>
+  </component>
+  <component name="connectionManager">
+    <option name="activeConnectionId" value="AwsConnectionManagerConnection" />
+  </component>
+  <component name="explorerToolWindow">
+    <option name="selectedTab" value="Explorer" />
+  </component>
+</project>

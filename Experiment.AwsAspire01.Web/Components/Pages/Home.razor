@@ -1,0 +1,160 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using Amazon.S3
+@using Amazon.S3.Model
+
+@inject IAmazonS3 s3Client;
+@inject IConfiguration configuration;
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<p>
+The list of configuration applied from the CloudFormation stack created in AppHost and assigned to project.
+</p>
+<ul>
+    @foreach(var item in configuration.GetSection("AWS:Resources").AsEnumerable())
+    {
+        @if(item.Value != null)
+        {
+            <li><b>@item.Key:</b> @item.Value</li>
+        }
+    }
+</ul>
+
+<p>
+    @s3Client.Config.RegionEndpoint.DisplayName
+</p>
+
+@if (_imageUrls == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <!-- Gallery -->
+    <div class="row">
+        @foreach (var url in _imageUrls)
+        {
+            <div class="col-lg-4 col-md-12 mb-4 mb-lg-0">
+                <img
+                    src="@url"
+                    class="w-100 shadow-1-strong rounded mb-4"
+                    alt="Boat on Calm Water"/>
+            </div>
+        }
+    </div>
+    <!-- Gallery -->
+}
+
+<button class="btn btn-primary" @onclick="GetPhoto">Get Photo</button>
+
+<InputFile OnChange="LoadFiles" multiple />
+
+@code {
+    string bucketName = "aspire01-us-east-1-json-storage-04";
+    
+    private List<string>? _imageUrls;
+    
+    private async void GetPhoto()
+    {
+        _imageUrls = await GetImageUrlsAsync();
+    }
+
+    private async void LoadFiles(InputFileChangeEventArgs e)
+    {
+        var selectedFiles = e.GetMultipleFiles();
+
+        if (!selectedFiles.Any())
+        {
+            Console.WriteLine("No files selected.");
+            return; // Exit if no files are selected
+        }
+    
+        var file = selectedFiles.First();
+    
+        // Resize the image file
+        var resizedFile = await file.RequestImageFileAsync(file.ContentType, 1024, 768);
+    
+        // Read the file content as a stream from IBrowserFile
+        using var fileStream = resizedFile.OpenReadStream();
+
+        // Create a byte array from the stream to get its length
+        byte[] fileBytes;
+        using (var memoryStream = new MemoryStream())
+        {
+            await fileStream.CopyToAsync(memoryStream);
+            fileBytes = memoryStream.ToArray();
+        }
+    
+        // Use HttpClient to send a PUT request to upload the file
+        using var httpClient = new HttpClient();
+        using var content = new ByteArrayContent(fileBytes);
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream"); // Adjust content type as needed
+        content.Headers.ContentLength = fileBytes.Length; // Set Content-Length explicitly
+
+        // Generate the pre-signed URL for the upload
+        Console.WriteLine("Generating PreSigned URL...");
+        var preSignedUrl = GeneratePreSignedUrl(file.Name); // Use file.Name or other relevant identifier
+        Console.WriteLine($"PreSigned URL is {preSignedUrl}");
+
+        // Send the PUT request to the pre-signed URL
+        var response = await httpClient.PutAsync(preSignedUrl, content);
+    
+        // Read and log the response content
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine(responseContent);
+
+        // Check the response status
+        Console.WriteLine(response.IsSuccessStatusCode ? 
+            "File successfully uploaded to S3." : 
+            $"Failed to upload: {response.StatusCode}, {response.ReasonPhrase}");
+    }
+    
+    private string GeneratePreSignedUrl(string objectKey, int expirationInMinutes = 3)
+    {
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = bucketName,
+            Key = objectKey,
+            Verb = HttpVerb.PUT,
+            ContentType = "application/octet-stream",
+            Expires = DateTime.UtcNow.AddMinutes(expirationInMinutes)
+        };
+
+        // Generate the pre-signed URL
+        var url = s3Client.GetPreSignedURL(request);
+        return url;
+    }
+    
+    private async Task<List<string>> GetImageUrlsAsync()
+    {
+        var urls = new List<string>();
+        var listRequest = new ListObjectsRequest
+        {
+            BucketName = bucketName
+        };
+
+        // Make a single request to list objects
+        var response = await s3Client.ListObjectsAsync(listRequest);
+
+        // Process the returned objects
+        foreach (var entry in response.S3Objects)
+        {
+            // Generate a pre-signed URL for the object
+            var url = s3Client.GetPreSignedURL(new GetPreSignedUrlRequest
+            {
+                BucketName = bucketName,
+                Key = entry.Key,
+                Expires = DateTime.UtcNow.AddMinutes(60) // URL valid for 60 minutes
+            });
+
+            urls.Add(url);
+        }
+
+        return urls;
+    }
+}

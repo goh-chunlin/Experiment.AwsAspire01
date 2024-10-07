@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create an S3 bucket for storing JSON files.
+
+Parameters:
+  AspireIAMUser:
+    Type: String
+    Description: The name of the existing IAM user to which the policy will be attached
+    Default: aspire-upload-user-02
+
+Resources:
+  JsonStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-json-storage-04"
+      VersioningConfiguration:
+        Status: Enabled
+      AccessControl: Private
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - "*"  # Change to your domain for production
+            AllowedMethods:
+              - PUT
+              - GET
+            AllowedHeaders:
+              - "*"
+            MaxAge: 3000
+      Tags:
+        - Key: Environment
+          Value: Development
+        - Key: Purpose
+          Value: Store JSON files for the app
+          
+  JsonStorageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref JsonStorageBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:user/${AspireIAMUser}"
+            Action: s3:PutObject
+            Resource: !Sub '${JsonStorageBucket.Arn}/*'
+
+Outputs:
+  S3BucketName:
+    Description: The name of the S3 bucket created for storing JSON files.
+    Value: !Ref JsonStorageBucket
