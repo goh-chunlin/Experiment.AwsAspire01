@@ -15,4 +15,8 @@
     <PackageReference Include="AWSSDK.S3" Version="3.7.404.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="Components\Layout\NavMenu.razor" />
+  </ItemGroup>
+
 </Project>
