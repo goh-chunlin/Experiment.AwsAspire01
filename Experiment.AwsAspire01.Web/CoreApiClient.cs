@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components.Forms;
+
 namespace Experiment.AwsAspire01.Web;
 
 public class CoreApiClient(HttpClient httpClient)
@@ -35,6 +37,25 @@ public class CoreApiClient(HttpClient httpClient)
         }
 
         return images?.ToArray() ?? [];
+    }
+
+    public async Task<bool> PostGalleryImageAsync(IBrowserFile file, CancellationToken cancellationToken = default)
+    {
+        var content = new MultipartFormDataContent();
+        
+        // Resize the image file
+        var resizedFile = await file.RequestImageFileAsync(file.ContentType, 1024, 768);
+        
+        // Prepare the file content for uploading
+        var fileContent = new StreamContent(resizedFile.OpenReadStream(cancellationToken: cancellationToken));
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(resizedFile.ContentType);
+        
+        // Add the file to the form content
+        content.Add(fileContent, "image", resizedFile.Name); // "image" is the name of the form field
+        
+        var response = await httpClient.PostAsync("/image", content, cancellationToken);
+
+        return response.IsSuccessStatusCode;
     }
 }
 
