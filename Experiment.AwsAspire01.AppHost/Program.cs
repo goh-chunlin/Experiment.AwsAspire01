@@ -2,8 +2,6 @@ using Amazon;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var apiService = builder.AddProject<Projects.Experiment_AwsAspire01_ApiService>("apiservice");
-
 // Setup a configuration for the AWS .NET SDK.
 var awsConfig = builder.AddAWSSDKConfig()
                         .WithProfile("default")
@@ -14,6 +12,11 @@ var awsResources = builder
     .AddAWSCloudFormationTemplate("aspire01-us-east-1", "Infrastructure/main.yaml")
     // Add the SDK configuration so the AppHost
     // knows what account/region to provision the resources.
+    .WithReference(awsConfig);
+
+var apiService = builder
+    .AddProject<Projects.Experiment_AwsAspire01_ApiService>("apiservice")
+    .WithReference(awsResources)
     .WithReference(awsConfig);
 
 builder.AddProject<Projects.Experiment_AwsAspire01_Web>("webfrontend")

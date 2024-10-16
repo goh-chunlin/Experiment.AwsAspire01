@@ -6,6 +6,7 @@
 
 @inject IAmazonS3 s3Client;
 @inject IConfiguration configuration;
+@inject CoreApiClient CoreApi;
 
 <PageTitle>Gallery</PageTitle>
 
@@ -52,7 +53,7 @@ else if (_isOperationSuccess.HasValue && !_isOperationSuccess.Value)
         </button>
     </div>
     <div class="p-2">
-        <button class="btn btn-primary" @onclick="GetPhotoAsync">
+        <button class="btn btn-primary" @onclick="GetPhotosAsync">
             Refresh
         </button>
     </div>
@@ -127,12 +128,12 @@ else
         _bucketName = configuration.GetValue<string>("AWS:Resources:S3BucketName") ?? 
                      throw new Exception("Bucket not found.");
         
-        await GetPhotoAsync();
+        await GetPhotosAsync();
     }
     
-    private async Task GetPhotoAsync()
+    private async Task GetPhotosAsync()
     {
-        _imageUrls = await GetImageUrlsAsync();
+        _imageUrls = (await CoreApi.GetGalleryImagesAsync()).Select(i => i.Url).ToList();
     }
 
     private async void LoadFiles(InputFileChangeEventArgs e)
@@ -192,7 +193,7 @@ else
         
         if (response.IsSuccessStatusCode)
         {
-            await GetPhotoAsync();
+            await GetPhotosAsync();
         }
         
         await InvokeAsync(StateHasChanged);
@@ -212,35 +213,5 @@ else
         // Generate the pre-signed URL
         var url = s3Client.GetPreSignedURL(request);
         return url;
-    }
-    
-    private async Task<List<string>> GetImageUrlsAsync()
-    {
-        var urls = new List<string>();
-        var listRequest = new ListObjectsRequest
-        {
-            BucketName = _bucketName
-        };
-
-        // Make a single request to list objects
-        var response = await s3Client.ListObjectsAsync(listRequest);
-
-        // Process the returned objects
-        foreach (var entry in response.S3Objects)
-        {
-            // Generate a pre-signed URL for the object
-            var url = s3Client.GetPreSignedURL(new GetPreSignedUrlRequest
-            {
-                BucketName = _bucketName,
-                Key = entry.Key,
-                Expires = DateTime.UtcNow.AddMinutes(1)
-            });
-
-            urls.Add(url);
-        }
-
-        urls.Reverse();
-
-        return urls;
     }
 }

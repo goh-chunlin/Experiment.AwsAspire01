@@ -1,6 +1,6 @@
 namespace Experiment.AwsAspire01.Web;
 
-public class WeatherApiClient(HttpClient httpClient)
+public class CoreApiClient(HttpClient httpClient)
 {
     public async Task<WeatherForecast[]> GetWeatherAsync(int maxItems = 10, CancellationToken cancellationToken = default)
     {
@@ -21,9 +21,29 @@ public class WeatherApiClient(HttpClient httpClient)
 
         return forecasts?.ToArray() ?? [];
     }
+    
+    public async Task<GalleryImage[]> GetGalleryImagesAsync(CancellationToken cancellationToken = default)
+    {
+        List<GalleryImage>? images = null;
+
+        await foreach (var image in httpClient.GetFromJsonAsAsyncEnumerable<GalleryImage>("/images", cancellationToken))
+        {
+            if (image is null) continue;
+            
+            images ??= [];
+            images.Add(image);
+        }
+
+        return images?.ToArray() ?? [];
+    }
 }
 
 public record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+}
+
+public record GalleryImage(string Url)
+{
+    
 }
