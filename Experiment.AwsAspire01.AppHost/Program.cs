@@ -22,7 +22,6 @@ var apiService = builder
 builder.AddProject<Projects.Experiment_AwsAspire01_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithReference(awsResources)
-    .WithReference(awsConfig)
     .WithReference(apiService);
 
 builder.Build().Run();

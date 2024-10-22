@@ -10,9 +10,4 @@
     <ProjectReference Include="..\Experiment.AwsAspire01.ServiceDefaults\Experiment.AwsAspire01.ServiceDefaults.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.301" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.404.7" />
-  </ItemGroup>
-
 </Project>
