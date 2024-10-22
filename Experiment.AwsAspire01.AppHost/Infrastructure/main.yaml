@@ -11,7 +11,7 @@ Resources:
   JsonStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${AWS::StackName}-json-storage-04"
+      BucketName: !Sub "${AWS::StackName}-json-storage-05"
       VersioningConfiguration:
         Status: Enabled
       AccessControl: Private

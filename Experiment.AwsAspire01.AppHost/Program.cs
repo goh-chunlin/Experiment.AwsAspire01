@@ -5,11 +5,11 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Setup a configuration for the AWS .NET SDK.
 var awsConfig = builder.AddAWSSDKConfig()
                         .WithProfile("default")
-                        .WithRegion(RegionEndpoint.USEast1);
+                        .WithRegion(RegionEndpoint.APSoutheast5);
 
 var awsResources = builder
     // Provision app-level resources defined in the CloudFormation template file
-    .AddAWSCloudFormationTemplate("aspire01-us-east-1", "Infrastructure/main.yaml")
+    .AddAWSCloudFormationTemplate("aspire01-ap-southeast-5", "Infrastructure/main.yaml")
     // Add the SDK configuration so the AppHost
     // knows what account/region to provision the resources.
     .WithReference(awsConfig);
